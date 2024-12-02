@@ -7,7 +7,6 @@ class Bl:
 
     def add_bl(self, event, start_time, end_time):
         try:
-            # Replace '.' with ':' in the time input and ensure two digits for day and month
             start_time = start_time.replace(".", ":")
             end_time = end_time.replace(".", ":")
 
@@ -17,7 +16,7 @@ class Bl:
 
             # Check if start time is before end time
             if start_time >= end_time:
-                return "End time must be after start time."
+                return "End time must be after start time. Please try again."
 
             # Add event to the list
             self.events.append({"EventName": event, "StartTime": start_time, "EndTime": end_time})
@@ -35,6 +34,15 @@ class Bl:
         except ValueError:
             return "Invalid input. Please enter a valid number."
 
+    def checkpassword(self, password, password2):
+        try:
+            if password != password2:
+                raise ValueError("Passwords don't match. Please try again.")
+        except ValueError as t:
+            print(t)
+            Ui(self).main()
+
+
 
 class Ui:
     def __init__(self, bl):
@@ -43,6 +51,7 @@ class Ui:
         self.events = []
         self.timestamp = datetime.now()
 
+
     def main(self):
         print("========================================")
         print("Welcome to our Planner App : ")
@@ -50,7 +59,6 @@ class Ui:
         print("2.Login")
         print("3.Exit")
         option1 = int(input("Choose which you want to go ['1','2','3'] : "))
-
         if option1 == 1:
             self.register()
         elif option1 == 2:
@@ -64,7 +72,7 @@ class Ui:
         password = str(input("Input your password : "))
         password2 = str(input("Confirm your password : "))
 
-        self.checkpassword(password, password2)
+        self.bl.checkpassword(password, password2)
 
         # Store user data
         self.userData.append({username: password})
@@ -79,9 +87,6 @@ class Ui:
         self.checklogin(username, password)
         print("[You have successfully logged in]")
 
-    def checkpassword(self, password, password2):
-        if password != password2:
-            raise ValueError("Passwords don't match")
 
     def checklogin(self, username, password):
         for i in self.userData:
@@ -126,7 +131,6 @@ class Ui:
         if end_time == "Exit" or end_time == "exit":
             print(">> Exit Add Event")
             self.PlannerApp()
-
 
         result = self.bl.add_bl(event, start_time, end_time)
         print(result)
