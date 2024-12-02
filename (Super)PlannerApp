@@ -1,0 +1,189 @@
+from datetime import datetime
+
+
+class Bl:
+    def __init__(self):
+        self.events = []
+
+    def add_bl(self, event, start_time, end_time):
+        try:
+            # Replace '.' with ':' in the time input and ensure two digits for day and month
+            start_time = start_time.replace(".", ":")
+            end_time = end_time.replace(".", ":")
+
+            # Add leading zeros if day or month are not two digits
+            start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M")
+            end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M")
+
+            # Check if start time is before end time
+            if start_time >= end_time:
+                return "End time must be after start time."
+
+            # Add event to the list
+            self.events.append({"EventName": event, "StartTime": start_time, "EndTime": end_time})
+            return f"Added event '{event}' from {start_time} to {end_time}."
+        except ValueError:
+            return "Invalid date format. Please try again."
+
+    def remove_bl(self, which_remove):
+        try:
+            if 1 <= which_remove <= len(self.events):
+                removed_event = self.events.pop(which_remove - 1)
+                return f"Removed event: {removed_event['EventName']}"
+            else:
+                return "Invalid selection. Please try again."
+        except ValueError:
+            return "Invalid input. Please enter a valid number."
+
+
+class Ui:
+    def __init__(self, bl):
+        self.bl = bl
+        self.userData = []
+        self.events = []
+        self.timestamp = datetime.now()
+
+    def main(self):
+        print("========================================")
+        print("Welcome to our Planner App : ")
+        print("1.Register")
+        print("2.Login")
+        print("3.Exit")
+        option1 = int(input("Choose which you want to go ['1','2','3'] : "))
+
+        if option1 == 1:
+            self.register()
+        elif option1 == 2:
+            self.login()
+        elif option1 == 3:
+            self.exit()
+
+    def register(self):
+        print("-------------[Register]-------------")
+        username = str(input("Input your username : "))
+        password = str(input("Input your password : "))
+        password2 = str(input("Confirm your password : "))
+
+        self.checkpassword(password, password2)
+
+        # Store user data
+        self.userData.append({username: password})
+        print("You have successfully registered!")
+        self.login()
+
+    def login(self):
+        print("-------------[Login]-------------")
+        username = str(input("Input your username : "))
+        password = str(input("Input your password : "))
+
+        self.checklogin(username, password)
+        print("[You have successfully logged in]")
+
+    def checkpassword(self, password, password2):
+        if password != password2:
+            raise ValueError("Passwords don't match")
+
+    def checklogin(self, username, password):
+        for i in self.userData:
+            if username in i and i[username] == password:
+                print("----------------------------------------------")
+                print(f"Welcome {username}!! to our Planner App")
+                self.PlannerApp()
+                return
+        print(" >> Login failed")
+        self.main()
+
+    def PlannerApp(self):
+        print("----------------------------------------------")
+        print("Choose what you want to do !!")
+        print("1.Add Event & Time")
+        print("2.Show Event")
+        print("3.Remove Event")
+        print("4.Log out")
+        print("------------------------------------")
+        option2 = int(input("Choose which you want to go [1] [2] [3] [4] : "))
+        if option2 == 1:
+            self.add()
+        elif option2 == 2:
+            self.show()
+        elif option2 == 3:
+            self.remove()
+        elif option2 == 4:
+            self.logout()
+
+    def add(self):
+        print("-------------[Add Event]-------------")
+        print('>> If you want to exit, type "Exit" ')
+        event = str(input("Enter the event name : "))
+        if event == "Exit" or event == "exit":
+            print(">> Exit Add Event")
+            self.PlannerApp()
+        start_time = str(input("Enter start time [In format YYYY-MM-DD HH:MM ] : "))
+        if start_time == "Exit" or start_time == "exit":
+            print(">> Exit Add Event")
+            self.PlannerApp()
+        end_time = str(input("Enter end time [In format YYYY-MM-DD HH:MM ] : "))
+        if end_time == "Exit" or end_time == "exit":
+            print(">> Exit Add Event")
+            self.PlannerApp()
+
+
+        result = self.bl.add_bl(event, start_time, end_time)
+        print(result)
+
+        if "Added event" not in result:
+            self.add()  # Retry if the event was not added
+
+        print(f"You have entered the event: {event} from {start_time} to {end_time}")
+        self.PlannerApp()
+
+    def show(self):
+        if not self.bl.events:
+            print("No events available.")
+        else:
+            for i in self.bl.events:
+                print(f"Event: {i['EventName']} | Start: {i['StartTime']} | End: {i['EndTime']}")
+        self.PlannerApp()
+
+
+
+
+    def remove(self):
+        if not self.bl.events:
+            print("No events available to remove.")
+        else:
+            for idx, i in enumerate(self.bl.events, start=1):
+                print(f"{idx}. {i['EventName']}")
+
+            try:
+                which_remove = int(input("Which event to remove? (Enter number): "))
+                result = self.bl.remove_bl(which_remove)
+                print(result)
+            except ValueError:
+                print("Invalid input. Please enter a valid number.")
+
+        self.PlannerApp()
+
+    def exit(self):
+        choice = str(input("Are you sure you want to exit? (y,n) : "))
+
+        if choice.lower() == "y":
+            print("------------------------------------")
+            print("Thank you for using our Planner App!!")
+            print("------------------------------------")
+            exit()
+        else:
+            self.main()
+
+    def logout(self):
+        self.main()
+
+
+def main():
+    bl_inst = Bl()
+    ui = Ui(bl_inst)
+    ui.main()
+
+
+if __name__ == "__main__":
+    main()
