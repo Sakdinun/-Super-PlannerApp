@@ -24,6 +24,25 @@ class Bl:
         except ValueError:
             return "Invalid date format. Please try again."
 
+    def show_bl(self, events):
+        events_with_duration = map(self.calculate_duration, events)  # Use the passed events list
+        event_iter = iter(events_with_duration)  # Create iterator for map
+
+        for event in self.events:
+            duration = next(event_iter)
+            event["Duration"] = duration  # Update duration in each event
+
+
+    def calculate_duration(self, event):
+        duration_seconds = (event["EndTime"] - event["StartTime"]).total_seconds() # find second
+
+        # Convert Hours to Min
+        hours = int(duration_seconds // 3600)
+        minutes = int((duration_seconds % 3600) // 60)
+
+        return f"{hours}:{minutes:02d} hours"
+
+
     def remove_bl(self, which_remove):
         try:
             if 1 <= which_remove <= len(self.events):
@@ -34,15 +53,22 @@ class Bl:
         except ValueError:
             return "Invalid input. Please enter a valid number."
 
-    def checkpassword(self, password, password2):
-        print(f"Checking passwords: {password} == {password2}")  # Debugging print
+    def check_empty(self,username,password):
+        try:
+            if username == "" or password == "":
+                raise ValueError
+        except ValueError:
+            return (">> Please enter your username and password.")
+        return ""
+
+
+    def bl_check_password(self, password, password2):
         try:
             if password != password2:
                 raise ValueError(">> Passwords don't match. Please try again.")
         except ValueError as e:
-            print(f"Error message: {e}")  # Debugging print
             return str(e)
-        return ""  # Return an empty string if passwords match
+        return ""
 
 
 class Ui:
@@ -73,23 +99,23 @@ class Ui:
     def register(self):
         print("-------------[Register]-------------")
         username = str(input("Input your username : "))
-        print(username)
         password = str(input("Input your password : "))
-        print(password)
         password2 = str(input("Confirm your password : "))
-        print(password2)
 
 
-        if username == "" or password == "":
-            print(">> Please enter your username and password.")
-            self.main()
-        if password != password2:
-            print(">> Passwords don't match. Please try again.")
+        # Check input empty
+        empty_error = self.bl.check_empty(username, password)
+        if "Please enter your username and password." in empty_error:
+            print(empty_error)
             self.main()
 
+        # Check if passwords match
+        password_error = self.bl.bl_check_password(password, password2)
+        if password_error:
+            print(password_error)
+            self.main()
 
-            # Store user data
-        self.userData.append({username: password})
+        self.userData.append({username: password}) # Store user data
         print("You have successfully registered!")
         self.login()
 
@@ -141,57 +167,35 @@ class Ui:
         print("-------------[Add Event]-------------")
         print('>> If you want to exit, type "Exit" ')
         event = str(input("Enter the event name : "))
-        if event == "Exit" or event == "exit":
+        if event.lower() == "exit":
             print(">> Exit Add Event")
             self.PlannerApp()
-        start_time = str(input("Enter start time [In format YYYY-MM-DD HH:MM ] : "))
-        if start_time == "Exit" or start_time == "exit":
+        start_time = str(input("Enter start time [In format DD-MM-YYYY HH:MM ] : "))
+        if start_time.lower() == "exit":
             print(">> Exit Add Event")
             self.PlannerApp()
-        end_time = str(input("Enter end time [In format YYYY-MM-DD HH:MM ] : "))
-        if end_time == "Exit" or end_time == "exit":
+        end_time = str(input("Enter end time [In format DD-MM-YYYY HH:MM ] : "))
+        if end_time.lower() == "exit":
             print(">> Exit Add Event")
             self.PlannerApp()
 
-        result = self.bl.add_bl(event, start_time, end_time)
-        print(result)
+        resultText = self.bl.add_bl(event, start_time, end_time) # Add
 
-        if "Added event" not in result:
+        if "Added event" not in resultText:
             self.add()  # Retry if the event was not added
 
-        print(f"You have entered the event: {event} from {start_time} to {end_time}")
+        print(f"You have entered the event: '{event}' from {start_time} to {end_time}")
         self.PlannerApp()
 
     def show(self):
         if not self.bl.events:
             print("No events available.")
         else:
-            # ใช้ map() เพื่อคำนวณระยะเวลา
-            events_with_duration = map(self.calculate_duration, self.bl.events)
-            event_iter = iter(events_with_duration)  # สร้าง iterator สำหรับ map
-
-            # ใช้ next() เพื่อดึงค่าของ duration จาก iterator ทีละตัว
-            for event in self.bl.events:
-                duration = next(event_iter)
-                event["Duration"] = duration  # อัปเดต duration สำหรับแต่ละเหตุการณ์
-
-            # แสดงผลเหตุการณ์พร้อมระยะเวลาในรูปแบบ "ชั่วโมง:นาที"
+            self.bl.show_bl(self.bl.events)
             for event in self.bl.events:
                 print(
                     f"Event: {event['EventName']} | Start: {event['StartTime']} | End: {event['EndTime']} | Duration: {event['Duration']}")
-
         self.PlannerApp()
-
-    def calculate_duration(self, event):
-        # คำนวณระยะเวลาในวินาที
-        duration_seconds = (event["EndTime"] - event["StartTime"]).total_seconds()
-
-        # Convert Hours to Min
-        hours = int(duration_seconds // 3600)
-        minutes = int((duration_seconds % 3600) // 60)
-
-        # แสดงผลเป็นชั่วโมง:นาที
-        return f"{hours}:{minutes:02d} hours"
 
 
     def remove(self):
