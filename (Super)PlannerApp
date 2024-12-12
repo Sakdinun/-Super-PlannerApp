@@ -11,8 +11,8 @@ class Bl:
             end_time = end_time.replace(".", ":")
 
             # Add leading zeros if day or month are not two digits
-            start_time = datetime.strptime(start_time, "%Y-%m-%d %H:%M")
-            end_time = datetime.strptime(end_time, "%Y-%m-%d %H:%M")
+            start_time = datetime.strptime(start_time, "%d-%m-%Y %H:%M")
+            end_time = datetime.strptime(end_time, "%d-%m-%Y %H:%M")
 
             # Check if start time is before end time
             if start_time >= end_time:
@@ -35,13 +35,14 @@ class Bl:
             return "Invalid input. Please enter a valid number."
 
     def checkpassword(self, password, password2):
+        print(f"Checking passwords: {password} == {password2}")  # Debugging print
         try:
             if password != password2:
-                raise ValueError("Passwords don't match. Please try again.")
-        except ValueError as t:
-            print(t)
-            Ui(self).main()
-
+                raise ValueError(">> Passwords don't match. Please try again.")
+        except ValueError as e:
+            print(f"Error message: {e}")  # Debugging print
+            return str(e)
+        return ""  # Return an empty string if passwords match
 
 
 class Ui:
@@ -58,26 +59,43 @@ class Ui:
         print("1.Register")
         print("2.Login")
         print("3.Exit")
-        option1 = int(input("Choose which you want to go ['1','2','3'] : "))
-        if option1 == 1:
+        option1 = input("Choose which you want to go ['1','2','3'] : ")
+        if option1 == "1":
             self.register()
-        elif option1 == 2:
+        elif option1 == "2":
             self.login()
-        elif option1 == 3:
+        elif option1 == "3":
             self.exit()
+        else:
+            print(">> Invalid input. Please try again.")
+            self.main()
 
     def register(self):
         print("-------------[Register]-------------")
         username = str(input("Input your username : "))
+        print(username)
         password = str(input("Input your password : "))
+        print(password)
         password2 = str(input("Confirm your password : "))
+        print(password2)
 
-        self.bl.checkpassword(password, password2)
 
-        # Store user data
+        if username == "" or password == "":
+            print(">> Please enter your username and password.")
+            self.main()
+        if password != password2:
+            print(">> Passwords don't match. Please try again.")
+            self.main()
+
+
+            # Store user data
         self.userData.append({username: password})
         print("You have successfully registered!")
         self.login()
+
+
+
+
 
     def login(self):
         print("-------------[Login]-------------")
@@ -106,15 +124,18 @@ class Ui:
         print("3.Remove Event")
         print("4.Log out")
         print("------------------------------------")
-        option2 = int(input("Choose which you want to go [1] [2] [3] [4] : "))
-        if option2 == 1:
+        option2 = input("Choose which you want to go [1] [2] [3] [4] : ")
+        if option2 == "1":
             self.add()
-        elif option2 == 2:
+        elif option2 == "2":
             self.show()
-        elif option2 == 3:
+        elif option2 == "3":
             self.remove()
-        elif option2 == 4:
+        elif option2 == "4":
             self.logout()
+        else:
+            print(">> Invalid input. Please try again.")
+            self.PlannerApp()
 
     def add(self):
         print("-------------[Add Event]-------------")
@@ -145,11 +166,32 @@ class Ui:
         if not self.bl.events:
             print("No events available.")
         else:
-            for i in self.bl.events:
-                print(f"Event: {i['EventName']} | Start: {i['StartTime']} | End: {i['EndTime']}")
+            # ใช้ map() เพื่อคำนวณระยะเวลา
+            events_with_duration = map(self.calculate_duration, self.bl.events)
+            event_iter = iter(events_with_duration)  # สร้าง iterator สำหรับ map
+
+            # ใช้ next() เพื่อดึงค่าของ duration จาก iterator ทีละตัว
+            for event in self.bl.events:
+                duration = next(event_iter)
+                event["Duration"] = duration  # อัปเดต duration สำหรับแต่ละเหตุการณ์
+
+            # แสดงผลเหตุการณ์พร้อมระยะเวลาในรูปแบบ "ชั่วโมง:นาที"
+            for event in self.bl.events:
+                print(
+                    f"Event: {event['EventName']} | Start: {event['StartTime']} | End: {event['EndTime']} | Duration: {event['Duration']}")
+
         self.PlannerApp()
 
+    def calculate_duration(self, event):
+        # คำนวณระยะเวลาในวินาที
+        duration_seconds = (event["EndTime"] - event["StartTime"]).total_seconds()
 
+        # Convert Hours to Min
+        hours = int(duration_seconds // 3600)
+        minutes = int((duration_seconds % 3600) // 60)
+
+        # แสดงผลเป็นชั่วโมง:นาที
+        return f"{hours}:{minutes:02d} hours"
 
 
     def remove(self):
@@ -171,13 +213,16 @@ class Ui:
     def exit(self):
         choice = str(input("Are you sure you want to exit? (y,n) : "))
 
-        if choice.lower() == "y":
+        if choice.lower() == "y" or choice.lower() == "yes":
             print("------------------------------------")
             print("Thank you for using our Planner App!!")
             print("------------------------------------")
             exit()
-        else:
+        elif choice.lower() == "n" or choice.lower() == "no":
             self.main()
+        else:
+            print(">> Invalid input. Please enter only (y,n).")
+            self.exit()
 
     def logout(self):
         self.main()
